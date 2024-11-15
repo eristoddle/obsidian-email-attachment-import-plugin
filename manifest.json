@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "email-attachment-import-plugin",
+	"name": "Email Attachment Import Plugin",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "It fetches Google Mail as md notes. For note taking on newletters and idea collections.",
+	"author": "Stephan Miller",
+	"authorUrl": "https://www.stephanmiller.com",
+	"fundingUrl": "https://buymeacoffee.com/eristoddle",
 	"isDesktopOnly": false
 }

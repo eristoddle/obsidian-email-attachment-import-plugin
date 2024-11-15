@@ -1,0 +1,8 @@
+*.png
+*.svg
+*.pdf
+*.snap
+*.scss
+*.tmp
+*.json
+node_modules
