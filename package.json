@@ -26,7 +26,7 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
-		"@google-cloud/local-auth": "^2.1.1",
+		"@google-cloud/local-auth": "^3.0.1",
 		"@googleapis/gmail": "^9.1.0",
 		"open": "^8.4.0",
 		"turndown": "7.1.3"
