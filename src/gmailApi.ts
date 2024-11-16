@@ -212,15 +212,15 @@ async function saveAttachments(settings: GmailSettings, id: string) {
   // fields.set('${Link}', `https://mail.google.com/mail/#all/${id}`);
   // const noteName = cleanFilename(renderTemplate(noteName_template, fields));
   // const finalNoteName = await incrementFilename(noteName + `.md`, folder);
-  //   assertPresent(payload.headers, 'No headers in payload');
-  //   assertPresent(payload.headers[2], 'No headers in payload');
+    assertPresent(payload.headers, 'No headers in payload');
+    assertPresent(payload.headers[2], 'No headers in payload');
 
-  //   const msgID = payload.headers[2].value;
+    const msgID = payload.headers[2].value;
 
-  //   assertPresent(msgID, 'No msgID in payload');
-  //   await makeDirectoryIfAbsent(settings.attachment_folder);
-  //   const files = await getAttachments(gmail, account, msgID, mailboxObject.assets, settings.attachment_folder);
-  //   fields.set('${Attachment}', files.map((f) => `![[${f}]]`).join('\n'));
+    assertPresent(msgID, 'No msgID in payload');
+    await makeDirectoryIfAbsent(settings.attachment_folder);
+    const files = await getAttachments(gmail, account, msgID, mailboxObject.assets, settings.attachment_folder);
+    fields.set('${Attachment}', files.map((f) => `![[${f}]]`).join('\n'));
   // const content = renderTemplate(note.template, fields);
   // await this.app.vault.create(finalNoteName, content);
 }
