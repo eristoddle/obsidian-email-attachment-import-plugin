@@ -116,23 +116,12 @@ export async function authorize(setting: GmailSettings) {
   }
 }
 
-function tryRestore(setting: GmailSettings) {
-  const prev_from = setting.prev_labels.from;
-  const prev_to = setting.prev_labels.to;
-  setting.labels.forEach((nlabel) => {
-    if (prev_from == nlabel[1]) setting.from_label = prev_from;
-    if (prev_to == nlabel[1]) setting.to_label = prev_to;
-  });
-}
-
 export async function setupGserviceConnection(settings: GmailSettings) {
   const gc = settings.gc;
   await authorize(settings);
   if (settings.gc.login) {
     assertPresent(gc.gmail, 'Gmail is not setup properly');
     settings.mail_account = await getMailAccount(gc.gmail);
-    settings.labels = (await listLabels(settings.mail_account, gc.gmail)) || [[]];
-    tryRestore(settings);
     return true;
   } else return false;
 }

@@ -14,7 +14,7 @@ export default class GmailAttachmentImporter extends Plugin {
 
     this.setTimer();
 
-    const ribbonIconEl = this.addRibbonIcon('sheets-in-box', 'gmail fetch', (evt: MouseEvent) => {
+    const ribbonIconEl = this.addRibbonIcon('paperclip', 'Gmail Attachment Import', (evt: MouseEvent) => {
       fetchMailAction(this.settings);
     });
 

@@ -10,27 +10,19 @@ interface GoogleService {
   scope: Array<string>;
   login: boolean;
 }
-interface LabelSet {
-  from: string;
-  to: string;
-}
 
 export interface GmailSettings {
   gc: GoogleService;
   credentials: string;
-  from_label: string;
-  to_label: string;
   mail_folder: string;
   attachment_folder: string;
   template: string;
   token_path: string;
-  labels: Array<Array<string>>;
   mail_account: string;
   fetch_amount: number;
   fetch_interval: number;
   fetch_on_load: boolean;
   noteName: string;
-  prev_labels: LabelSet;
 }
 
 export const DEFAULT_SETTINGS: GmailSettings = {
@@ -41,22 +33,16 @@ export const DEFAULT_SETTINGS: GmailSettings = {
     login: false,
   },
   credentials: '',
-  from_label: '',
-  to_label: '',
   template: '',
   mail_folder: 'fetchedMail',
   attachment_folder: 'fetchedMail/attachments',
   noteName: '${Subject}',
   token_path: 'plugins/obsidian-google-mail/.token',
-  labels: [[]],
+
   mail_account: '',
   fetch_amount: 25,
   fetch_interval: 0,
   fetch_on_load: false,
-  prev_labels: {
-    from: '',
-    to: '',
-  },
 };
 
 export class ExampleModal extends Modal {
@@ -110,12 +96,8 @@ export class ExampleModal extends Modal {
 }
 
 async function logout(settings: GmailSettings, Tab: GmailAttachmentSettingsTab) {
-  settings.prev_labels = { from: settings.from_label, to: settings.to_label };
   removeToken(settings.token_path).then(() => {
     settings.mail_account = '';
-    settings.from_label = '';
-    settings.to_label = '';
-    settings.labels = [[]];
     settings.gc.gmail = null;
     settings.gc.login = false;
     settings.gc.authClient = null;
