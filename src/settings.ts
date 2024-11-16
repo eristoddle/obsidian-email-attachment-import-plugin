@@ -1,27 +1,26 @@
 import { Client, setupGserviceConnection } from 'src/googleAuth';
 import { checkToken, removeToken } from 'src/googleAuth';
 import { Setting, Modal, Notice, App } from 'obsidian';
-import { ObsGMailSettingTab } from 'src/main';
+import { GmailAttachmentSettingsTab } from 'src/main';
 import { GMail } from './gmailApi';
 
-interface gservice {
+interface GoogleService {
   authClient: Client | null;
   gmail: GMail | null;
   scope: Array<string>;
   login: boolean;
 }
-interface label_set {
+interface LabelSet {
   from: string;
   to: string;
 }
 
-export interface ObsGMailSettings {
-  gc: gservice;
+export interface GmailSettings {
+  gc: GoogleService;
   credentials: string;
   from_label: string;
   to_label: string;
   mail_folder: string;
-  toFetchAttachment: boolean;
   attachment_folder: string;
   template: string;
   token_path: string;
@@ -30,12 +29,11 @@ export interface ObsGMailSettings {
   fetch_amount: number;
   fetch_interval: number;
   fetch_on_load: boolean;
-  destroy_on_fetch: boolean;
   noteName: string;
-  prev_labels: label_set;
+  prev_labels: LabelSet;
 }
 
-export const DEFAULT_SETTINGS: ObsGMailSettings = {
+export const DEFAULT_SETTINGS: GmailSettings = {
   gc: {
     authClient: null,
     gmail: null,
@@ -47,7 +45,6 @@ export const DEFAULT_SETTINGS: ObsGMailSettings = {
   to_label: '',
   template: '',
   mail_folder: 'fetchedMail',
-  toFetchAttachment: false,
   attachment_folder: 'fetchedMail/attachments',
   noteName: '${Subject}',
   token_path: 'plugins/obsidian-google-mail/.token',
@@ -56,7 +53,6 @@ export const DEFAULT_SETTINGS: ObsGMailSettings = {
   fetch_amount: 25,
   fetch_interval: 0,
   fetch_on_load: false,
-  destroy_on_fetch: false,
   prev_labels: {
     from: '',
     to: '',
@@ -65,10 +61,10 @@ export const DEFAULT_SETTINGS: ObsGMailSettings = {
 
 export class ExampleModal extends Modal {
   result: string;
-  settings: ObsGMailSettings;
-  settingTab: ObsGMailSettingTab;
+  settings: GmailSettings;
+  settingTab: GmailAttachmentSettingsTab;
   onSubmit: (result: string) => void;
-  constructor(app: App, settingTab: ObsGMailSettingTab, onSubmit: (result: string) => void) {
+  constructor(app: App, settingTab: GmailAttachmentSettingsTab, onSubmit: (result: string) => void) {
     super(app);
     this.onSubmit = onSubmit;
     this.settingTab = settingTab;
@@ -113,7 +109,7 @@ export class ExampleModal extends Modal {
   }
 }
 
-async function logout(settings: ObsGMailSettings, Tab: ObsGMailSettingTab) {
+async function logout(settings: GmailSettings, Tab: GmailAttachmentSettingsTab) {
   settings.prev_labels = { from: settings.from_label, to: settings.to_label };
   removeToken(settings.token_path).then(() => {
     settings.mail_account = '';
@@ -128,15 +124,15 @@ async function logout(settings: ObsGMailSettings, Tab: ObsGMailSettingTab) {
   });
 }
 
-export async function draw_settingtab(settingTab: ObsGMailSettingTab) {
+export async function draw_settingtab(settingTab: GmailAttachmentSettingsTab) {
   const plugin = settingTab.plugin;
   const { containerEl } = settingTab;
   const settings = plugin.settings;
   containerEl.empty();
   containerEl.createEl('h2', { text: 'Setup Google OAuth' });
   const profile_section = new Setting(containerEl)
-    .setName('Credential Content')
-    .setDesc('The content from credential file (*.json)');
+    .setName('GAP Client JSON')
+    .setDesc('The web OAuth client json downloaded from Google Auth Platform.');
   profile_section.addButton((cb) => {
     cb.setButtonText('Setup')
       .setCta()
@@ -145,7 +141,7 @@ export async function draw_settingtab(settingTab: ObsGMailSettingTab) {
       });
   });
   // TODO: This is not happening. Also need to auth every time I do something. Maybe because dev env?
-  if (await checkToken(settings.token_path)) {
+  // if (await checkToken(settings.token_path)) {
     profile_section.addButton((cb) => {
       cb.setButtonText('logout')
         .setCta()
@@ -154,40 +150,13 @@ export async function draw_settingtab(settingTab: ObsGMailSettingTab) {
         });
     });
 
-    containerEl.createEl('h2', { text: 'EMail Fetch Settings' });
+    containerEl.createEl('h2', { text: 'Gmail Attachment Import Settings' });
     new Setting(containerEl)
       .setName('Email Account')
       .addText((text) => text.setValue(settings.mail_account).setDisabled(true));
     new Setting(containerEl)
-      .setName('Labels [From/To]')
-      .setDesc('Labels to fetch from/ Labels to assign')
-      .addDropdown((cb) => {
-        if (settings.labels.length > 0)
-          // @ts-ignore
-          settings.labels.forEach((label) => {
-            cb.addOption(label[1], label[0]);
-          });
-        if (settings.from_label) cb.setValue(settings.from_label);
-        cb.onChange(async (value) => {
-          settings.from_label = value;
-          await plugin.saveSettings();
-        });
-      })
-      .addDropdown((cb) => {
-        if (settings.labels.length > 0)
-          // @ts-ignore
-          settings.labels.forEach((label) => {
-            cb.addOption(label[1], label[0]);
-          });
-        if (settings.to_label) cb.setValue(settings.to_label);
-        cb.onChange(async (value) => {
-          settings.to_label = value;
-          await plugin.saveSettings();
-        });
-      });
-    new Setting(containerEl)
       .setName('Mail Folder')
-      .setDesc('Folder to save mail notes')
+      .setDesc('Folder to save email attachments')
       .addText((text) =>
         text
           .setPlaceholder('/Folder/')
@@ -198,33 +167,8 @@ export async function draw_settingtab(settingTab: ObsGMailSettingTab) {
           }),
       );
     new Setting(containerEl)
-      .setName('to Fetch Attachments')
-      .setDesc('Whether to fetch attachments')
-      .addToggle((cb) => {
-        cb.setValue(settings.toFetchAttachment);
-        cb.onChange(async (value) => {
-          settings.toFetchAttachment = value;
-          await plugin.saveSettings();
-          settingTab.display();
-        });
-      });
-    if (settings.toFetchAttachment) {
-      new Setting(containerEl)
-        .setName('Attachment Folder')
-        .setDesc('Folder to save mail attachments')
-        .addText((text) =>
-          text
-            .setPlaceholder('/Folder/')
-            .setValue(settings.attachment_folder)
-            .onChange(async (value) => {
-              settings.attachment_folder = value;
-              await plugin.saveSettings();
-            }),
-        );
-    }
-    new Setting(containerEl)
-      .setName('Mail Name')
-      .setDesc('File name to save mail notes')
+      .setName('File Name')
+      .setDesc('File name to use for email attachment notes')
       .addText((text) =>
         text
           .setPlaceholder('${Subject}-${Date}')
@@ -235,8 +179,8 @@ export async function draw_settingtab(settingTab: ObsGMailSettingTab) {
           }),
       );
     new Setting(containerEl)
-      .setName('Mail Note Template')
-      .setDesc('Please check document for available mail attributes')
+      .setName('Attachement Note Template')
+      .setDesc('Template used to render email attachment notes.')
       .addText((text) =>
         text
           .setPlaceholder('/Folder/template.md')
@@ -247,8 +191,8 @@ export async function draw_settingtab(settingTab: ObsGMailSettingTab) {
           }),
       );
     new Setting(containerEl)
-      .setName('Fetch Amount')
-      .setDesc('How many email to fetch per action')
+      .setName('Fetch Count')
+      .setDesc('How many attachments to fetch per action')
       .addText((text) =>
         text
           .setPlaceholder('default is 25')
@@ -275,7 +219,7 @@ export async function draw_settingtab(settingTab: ObsGMailSettingTab) {
       );
     new Setting(containerEl)
       .setName('Fetch on load')
-      .setDesc('Whether to run fetch on Obsidian Start')
+      .setDesc('Whether to run fetch when Obsidian starts')
       .addToggle((cb) => {
         cb.setValue(settings.fetch_on_load);
         cb.onChange(async (value) => {
@@ -284,39 +228,16 @@ export async function draw_settingtab(settingTab: ObsGMailSettingTab) {
         });
       });
     new Setting(containerEl)
-      .setName('☢️ Destroy on Fetch')
-      .setDesc('Turn on to delete email after fetch')
-      .addToggle((cb) => {
-        cb.setValue(settings.destroy_on_fetch);
-        cb.onChange(async (value) => {
-          settings.destroy_on_fetch = value;
-          await plugin.saveSettings();
-        });
-      });
-    new Setting(containerEl)
       .setName('Validation')
-      .setDesc('Help you validate settins')
+      .setDesc('Validates your settings.')
       .addButton((cb) => {
         cb.setCta();
         cb.setIcon('checkmark');
         cb.onClick(async (cb) => {
           let checked = true;
           if (!(await this.app.vault.exists(settings.template))) {
-            new Notice('Template file not exists.');
+            new Notice('Template file doesn\'t exist.');
             settings.template = '';
-            checked = false;
-          }
-          if (settings.from_label == settings.to_label) {
-            new Notice('From and To labels can not be the same.');
-            let idx = 0;
-            for (let i = 0; i < settings.labels.length; i++) {
-              if (settings.labels[i][0] == settings.from_label) {
-                idx = i + 1;
-                break;
-              }
-            }
-            if (idx == settings.labels.length - 1) idx = 0;
-            settings.to_label = settings.labels[idx][0];
             checked = false;
           }
           if (checked) {
@@ -326,5 +247,5 @@ export async function draw_settingtab(settingTab: ObsGMailSettingTab) {
           settingTab.display();
         });
       });
-  }
+  // }
 }

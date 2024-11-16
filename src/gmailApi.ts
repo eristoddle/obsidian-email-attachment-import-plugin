@@ -1,7 +1,7 @@
 import { Notice, base64ToArrayBuffer } from 'obsidian';
 import { gmail_v1 } from '@googleapis/gmail';
 import { processBody, incrementFilename } from 'src/handleMail';
-import { ObsGMailSettings } from 'src/settings';
+import { GmailSettings } from 'src/settings';
 import { authorize } from 'src/googleAuth';
 import { assertPresent } from './typeCheck';
 
@@ -23,7 +23,7 @@ const body_options = new Map([
   ['raw', 'raw'],
 ]);
 
-export async function fetchMailAction(settings: ObsGMailSettings) {
+export async function fetchMailAction(settings: GmailSettings) {
   if (settings.gc.gmail) {
     await authorize(settings).then(() => {
       fetchMails(settings);
@@ -57,7 +57,7 @@ export async function listLabels(account: string, gmail: gmail_v1.Gmail) {
   return label_list;
 }
 
-function fillTemplate(template: string, mail: Map<string, string>) {
+function renderTemplate(template: string, mail: Map<string, string>) {
   const string = template.replace(/\${\w+}/g, function (all) {
     return mail.get(all) || '';
   });
@@ -81,7 +81,7 @@ function formatDate(iso_date: string) {
   return d.toISOString().split('T')[0];
 }
 
-async function obtainTemplate(template_path: string) {
+async function getTemplate(template_path: string) {
   let template = '${Body}';
   if (template_path) {
     template = await this.app.vault.readRaw(template_path);
@@ -178,8 +178,8 @@ export type PayloadHeaders = gmail_v1.Schema$MessagePartHeader[];
 export type MessagePart = gmail_v1.Schema$MessagePart;
 export type MessagePartBody = gmail_v1.Schema$MessagePartBody;
 
-async function saveMail(settings: ObsGMailSettings, id: string) {
-  const note = await obtainTemplate(settings.template);
+async function saveAttachments(settings: GmailSettings, id: string) {
+  const note = await getTemplate(settings.template);
   const noteName_template = settings.noteName;
   const gmail = settings.gc.gmail;
   assertPresent(gmail, 'Gmail is not setup properly');
@@ -224,9 +224,8 @@ async function saveMail(settings: ObsGMailSettings, id: string) {
   const body = await processBody([mailboxObject.raw_mtxt, mailboxObject.raw_mhtml], note.body_format);
   fields.set('${Body}', body);
   fields.set('${Link}', `https://mail.google.com/mail/#all/${id}`);
-  const noteName = cleanFilename(fillTemplate(noteName_template, fields));
+  const noteName = cleanFilename(renderTemplate(noteName_template, fields));
   const finalNoteName = await incrementFilename(noteName + `.md`, folder);
-  if (settings.toFetchAttachment && mailboxObject.assets.length > 0) {
     assertPresent(payload.headers, 'No headers in payload');
     assertPresent(payload.headers[2], 'No headers in payload');
 
@@ -236,8 +235,7 @@ async function saveMail(settings: ObsGMailSettings, id: string) {
     await makeDirectoryIfAbsent(settings.attachment_folder);
     const files = await getAttachments(gmail, account, msgID, mailboxObject.assets, settings.attachment_folder);
     fields.set('${Attachment}', files.map((f) => `![[${f}]]`).join('\n'));
-  } else fields.set('${Attachment}', '');
-  const content = fillTemplate(note.template, fields);
+  const content = renderTemplate(note.template, fields);
   await this.app.vault.create(finalNoteName, content);
 }
 
@@ -256,8 +254,9 @@ async function makeDirectoryIfAbsent(path: string) {
   }
 }
 
-async function fetchMails(settings: ObsGMailSettings) {
+async function fetchMails(settings: GmailSettings) {
   const account = settings.mail_account;
+  // TODO: Not sure why this becomes an ID
   const fromID = settings.from_label;
   const base_folder = settings.mail_folder;
   const amount = settings.fetch_amount;
@@ -276,7 +275,7 @@ async function fetchMails(settings: ObsGMailSettings) {
     if (i % 5 == 0 && i > 0) new Notice(`${((i / len) * 100).toFixed(0)}% fetched`);
     const id = threads[i].id || '';
     console.log(`Fetching mail with id: ${id}`);
-    // await saveMail(settings, id);
+    // await saveAttachments(settings, id);
   }
   new Notice(`${len} mails fetched.`);
 }

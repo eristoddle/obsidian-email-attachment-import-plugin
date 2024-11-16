@@ -1,10 +1,10 @@
 import { App, Plugin, PluginSettingTab } from 'obsidian';
 
 import { fetchMailAction } from 'src/gmailApi';
-import { draw_settingtab, ObsGMailSettings, DEFAULT_SETTINGS } from 'src/settings';
+import { draw_settingtab, GmailSettings, DEFAULT_SETTINGS } from 'src/settings';
 
-export default class ObsGMail extends Plugin {
-  settings: ObsGMailSettings;
+export default class GmailAttachmentImporter extends Plugin {
+  settings: GmailSettings;
   timerID: ReturnType<typeof setInterval>;
 
   async onload() {
@@ -27,7 +27,7 @@ export default class ObsGMail extends Plugin {
       },
     });
 
-    this.addSettingTab(new ObsGMailSettingTab(this.app, this));
+    this.addSettingTab(new GmailAttachmentSettingsTab(this.app, this));
   }
 
   onunload() {
@@ -65,10 +65,10 @@ export default class ObsGMail extends Plugin {
   }
 }
 
-export class ObsGMailSettingTab extends PluginSettingTab {
-  plugin: ObsGMail;
+export class GmailAttachmentSettingsTab extends PluginSettingTab {
+  plugin: GmailAttachmentImporter;
 
-  constructor(app: App, plugin: ObsGMail) {
+  constructor(app: App, plugin: GmailAttachmentImporter) {
     super(app, plugin);
     this.plugin = plugin;
   }

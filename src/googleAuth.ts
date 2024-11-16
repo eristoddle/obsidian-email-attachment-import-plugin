@@ -1,6 +1,6 @@
 import { Notice } from 'obsidian';
 import { listLabels, getMailAccount, createGmailConnect } from 'src/gmailApi';
-import { ObsGMailSettings } from 'src/settings';
+import { GmailSettings } from 'src/settings';
 import http from 'http';
 import url from 'url';
 import opn from 'open';
@@ -18,7 +18,7 @@ const SCOPES = [
   'https://www.googleapis.com/auth/gmail.modify',
   'https://www.googleapis.com/auth/userinfo.email',
 ];
-export async function loadSavedCredentialsIfExist(settings: ObsGMailSettings) {
+export async function loadSavedCredentialsIfExist(settings: GmailSettings) {
   try {
     const content = await this.app.vault.readConfigJson(settings.token_path);
     return auth.fromJSON(content);
@@ -99,7 +99,7 @@ async function authenticate(scopes: Array<string>, credentials: string): Promise
   });
 }
 
-export async function authorize(setting: ObsGMailSettings) {
+export async function authorize(setting: GmailSettings) {
   let client: Client | null = await loadSavedCredentialsIfExist(setting);
   if (!client) {
     client = await authenticate(SCOPES, setting.credentials);
@@ -116,7 +116,7 @@ export async function authorize(setting: ObsGMailSettings) {
   }
 }
 
-function tryRestore(setting: ObsGMailSettings) {
+function tryRestore(setting: GmailSettings) {
   const prev_from = setting.prev_labels.from;
   const prev_to = setting.prev_labels.to;
   setting.labels.forEach((nlabel) => {
@@ -125,7 +125,7 @@ function tryRestore(setting: ObsGMailSettings) {
   });
 }
 
-export async function setupGserviceConnection(settings: ObsGMailSettings) {
+export async function setupGserviceConnection(settings: GmailSettings) {
   const gc = settings.gc;
   await authorize(settings);
   if (settings.gc.login) {
