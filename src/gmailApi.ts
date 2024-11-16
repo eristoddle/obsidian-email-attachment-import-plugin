@@ -4,6 +4,7 @@ import { processBody, incrementFilename } from 'src/handleMail';
 import { GmailSettings } from 'src/settings';
 import { authorize } from 'src/googleAuth';
 import { assertPresent } from './typeCheck';
+import TurndownService from 'turndown';
 
 export type GMail = gmail_v1.Gmail;
 export function createGmailConnect(client: any): GMail {
@@ -114,14 +115,32 @@ async function getAttachments(
       continue;
     }
 
-    const ares = await getAttachment(gmail, account, msgId, attach_id);
-    const red = ares.data?.data?.replace(/-/g, '+').replace(/_/g, '/') || '';
-    const init_name = filename;
-    const final_name = await incrementFilename(init_name, folder);
-    await this.app.vault.createBinary(final_name, base64ToArrayBuffer(red));
+    const attachmentResponse = await getAttachment(gmail, account, msgId, attach_id);
+    const final_name = await processAttachment(part, folder, attachmentResponse);
     files.push(final_name);
   }
   return files;
+}
+
+async function processAttachment(part: MessagePart, folder: string, attachmentResponse: any) {
+  const base64Data = attachmentResponse.data?.data?.replace(/-/g, '+').replace(/_/g, '/') || '';
+  const init_name = part.filename || '';
+  const final_name = await incrementFilename(init_name, folder);
+  if (part.mimeType === 'text/html') {
+    const markdownContent = convertToMarkdown(base64Data);
+    await this.app.vault.create(final_name + '.md', markdownContent);
+  } else {
+    await this.app.vault.createBinary(final_name, base64ToArrayBuffer(base64Data));
+  }
+  return final_name;
+}
+
+// TODO: 1. Clean up the HTML before converting to markdown 2. Use template
+function convertToMarkdown(base64Data: string) {
+  const turndownService = new TurndownService();
+  const decodedHtml = Buffer.from(base64Data, 'base64').toString('utf-8');
+  const markdownContent = turndownService.turndown(decodedHtml);
+  return markdownContent;
 }
 
 function flattenParts(mbObj: MailboxObject, parts: MessagePart[]) {
