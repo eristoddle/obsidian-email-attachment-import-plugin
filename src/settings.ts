@@ -27,7 +27,6 @@ export interface GmailSettings {
   gc: GoogleService;
   credentials: string;
   defaultNoteFolder: string;
-  attachment_folder: string;
   defaultTemplate: string;
   token_path: string;
   mail_account: string;
@@ -48,7 +47,6 @@ export const DEFAULT_SETTINGS: GmailSettings = {
   credentials: '',
   defaultTemplate: '',
   defaultNoteFolder: 'gmailNotes',
-  attachment_folder: 'fetchedMail/attachments',
   defaultNoteName: '${Subject}',
   token_path: 'plugins/obsidian-google-mail/.token',
 

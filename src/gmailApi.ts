@@ -243,8 +243,8 @@ async function importEmailData(settings: GmailSettings, id: string, config: Impo
   }
 
   if (config.location == 'attachment') {
-    await makeDirectoryIfAbsent(settings.attachment_folder);
-    const files = await getAttachments(gmail, account, msgID, mailboxObject.assets, settings.attachment_folder);
+    await makeDirectoryIfAbsent(settings.defaultNoteFolder);
+    const files = await getAttachments(gmail, account, msgID, mailboxObject.assets, settings.defaultNoteFolder);
     fields.set('${Attachment}', files.map((f) => `![[${f}]]`).join('\n'));
   }
 }
