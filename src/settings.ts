@@ -56,7 +56,7 @@ export const DEFAULT_SETTINGS: GmailSettings = {
   fetchAmount: 25,
   fetchInterval: 0,
   fetchOnLoad: false,
-  // TODO: Add this to settings UI. Will also need to handle html cleanup and title and author extraction.
+  // TODO: Remove my hardcoded values. Add this to settings UI. Will also need to handle html cleanup and title and author extraction.
   importConfigs: [
     {
       label: 'Kindle Highlights',

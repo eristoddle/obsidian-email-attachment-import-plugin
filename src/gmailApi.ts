@@ -124,10 +124,11 @@ async function getAttachments(
 
 async function processAttachment(part: MessagePart, folder: string, attachmentResponse: any) {
   const base64Data = attachmentResponse.data?.data?.replace(/-/g, '+').replace(/_/g, '/') || '';
+  // TODO: This needs to be the book title
   const init_name = part.filename || '';
   const final_name = await incrementFilename(init_name, folder);
   if (part.mimeType === 'text/html') {
-    const markdownContent = convertToMarkdown(base64Data);
+    const markdownContent = convertAttachmentToMarkdown(base64Data);
     await this.app.vault.create(final_name + '.md', markdownContent);
   } else {
     await this.app.vault.createBinary(final_name, base64ToArrayBuffer(base64Data));
@@ -135,8 +136,8 @@ async function processAttachment(part: MessagePart, folder: string, attachmentRe
   return final_name;
 }
 
-// TODO: 1. Clean up the HTML before converting to markdown 2. Use template
-function convertToMarkdown(base64Data: string) {
+// TODO: 1. Clean up the HTML before converting to markdown (see handleMail.ts) 2. Use template
+function convertAttachmentToMarkdown(base64Data: string) {
   const turndownService = new TurndownService();
   const decodedHtml = Buffer.from(base64Data, 'base64').toString('utf-8');
   const markdownContent = turndownService.turndown(decodedHtml);
@@ -181,6 +182,7 @@ export type PayloadHeaders = gmail_v1.Schema$MessagePartHeader[];
 export type MessagePart = gmail_v1.Schema$MessagePart;
 export type MessagePartBody = gmail_v1.Schema$MessagePartBody;
 
+// TODO: Refactor
 async function importEmailData(settings: GmailSettings, id: string, config: ImportConfig) {
   const note = await getTemplate(settings.defaultTemplate);
   const noteName_template = settings.defaultNoteName;
@@ -241,6 +243,7 @@ async function importEmailData(settings: GmailSettings, id: string, config: Impo
     await this.app.vault.create(finalNoteName, content);
   }
 
+  // TODO: Use template with attachments
   if (config.location == 'attachment') {
     await makeDirectoryIfAbsent(settings.defaultNoteFolder);
     const files = await getAttachments(gmail, account, msgID, mailboxObject.assets, settings.defaultNoteFolder);
@@ -276,7 +279,7 @@ async function fetchMails(settings: GmailSettings) {
   const base_folder = settings.defaultNoteFolder;
   const amount = settings.fetchAmount;
   const gmail = settings.gc.gmail;
-  assertPresent(gmail, 'Gmail setup is not correct');
+  assertPresent(gmail, 'Gmail is not setup properly');
   const importConfigs = settings.importConfigs;
 
   new Notice('Fetch starting');
@@ -294,7 +297,6 @@ async function fetchMails(settings: GmailSettings) {
       if (i % 5 == 0 && i > 0) new Notice(`${((i / len) * 100).toFixed(0)}% fetched`);
       const id = threads[i].id || '';
       console.log(`Fetching mail with id: ${id}`);
-      // TODO: Handle configs
       await importEmailData(settings, id, config);
     }
   });
