@@ -1,12 +1,13 @@
 import { Notice, base64ToArrayBuffer } from 'obsidian';
 import { gmail_v1 } from '@googleapis/gmail';
 import { processBody, incrementFilename } from 'src/handleMail';
-import { GmailSettings } from 'src/settings';
+import { GmailSettings, ImportConfig } from 'src/settings';
 import { authorize } from 'src/googleAuth';
 import { assertPresent } from './typeCheck';
 import TurndownService from 'turndown';
 
 export type GMail = gmail_v1.Gmail;
+
 export function createGmailConnect(client: any): GMail {
   return new gmail_v1.Gmail({
     auth: client,
@@ -181,7 +182,7 @@ export type PayloadHeaders = gmail_v1.Schema$MessagePartHeader[];
 export type MessagePart = gmail_v1.Schema$MessagePart;
 export type MessagePartBody = gmail_v1.Schema$MessagePartBody;
 
-async function saveAttachments(settings: GmailSettings, id: string) {
+async function importEmailData(settings: GmailSettings, id: string, config: ImportConfig) {
   const note = await getTemplate(settings.template);
   const noteName_template = settings.noteName;
   const gmail = settings.gc.gmail;
@@ -220,33 +221,37 @@ async function saveAttachments(settings: GmailSettings, id: string) {
       console.warn('no body found');
     }
   }
+
   // console.log('mailboxObject:');
   // console.log(payload);
   // console.log(mailboxObject);
   console.log('fields:', fields);
   console.log('subject:', fields.get('${Subject}'));
 
-  // const body = await processBody([mailboxObject.raw_mtxt, mailboxObject.raw_mhtml], note.body_format);
-  // fields.set('${Body}', body);
-  // fields.set('${Link}', `https://mail.google.com/mail/#all/${id}`);
-  // const noteName = cleanFilename(renderTemplate(noteName_template, fields));
-  // const finalNoteName = await incrementFilename(noteName + `.md`, folder);
-    assertPresent(payload.headers, 'No headers in payload');
-    assertPresent(payload.headers[2], 'No headers in payload');
+  assertPresent(payload.headers, 'No headers in payload');
+  assertPresent(payload.headers[2], 'No headers in payload');
+  const msgID = payload.headers[2].value;
+  assertPresent(msgID, 'No msgID in payload');
 
-    const msgID = payload.headers[2].value;
+  if (config.location == 'body') {
+    const noteName = cleanFilename(renderTemplate(noteName_template, fields));
+    const finalNoteName = await incrementFilename(noteName + `.md`, folder);
+    const body = await processBody([mailboxObject.raw_mtxt, mailboxObject.raw_mhtml], note.body_format);
+    fields.set('${Body}', body);
+    const content = renderTemplate(note.template, fields);
+    await this.app.vault.create(finalNoteName, content);
+  }
 
-    assertPresent(msgID, 'No msgID in payload');
+  if (config.location == 'attachment') {
     await makeDirectoryIfAbsent(settings.attachment_folder);
     const files = await getAttachments(gmail, account, msgID, mailboxObject.assets, settings.attachment_folder);
     fields.set('${Attachment}', files.map((f) => `![[${f}]]`).join('\n'));
-  // const content = renderTemplate(note.template, fields);
-  // await this.app.vault.create(finalNoteName, content);
+  }
 }
 
 // TODO: This is where the filtering can happen
 async function fetchMailList(account: string, gmail: gmail_v1.Gmail, partialSubjects: string[]) {
-  const query = partialSubjects.map(subject => `subject:${subject}`).join(' OR ');
+  const query = partialSubjects.map((subject) => `subject:${subject}`).join(' OR ');
   const res = await gmail.users.threads.list({
     userId: account,
     maxResults: 100,
@@ -267,24 +272,27 @@ async function fetchMails(settings: GmailSettings) {
   const base_folder = settings.mail_folder;
   const amount = settings.fetch_amount;
   const gmail = settings.gc.gmail;
-  // TODO: Create this setting. Eventually an array of objects with a folder and a list of partial subjects
-  // const partialSubjects = settings.partial_subjects;
-  const partialSubjects = ['iPad Notebook export'];
   assertPresent(gmail, 'Gmail setup is not correct');
+  const importConfigs = settings.import_configs;
 
   new Notice('Fetch starting');
   await makeDirectoryIfAbsent(base_folder);
-  const threads = (await fetchMailList(account, gmail, partialSubjects)) || [];
-  if (threads.length == 0) {
-    new Notice(`Your inbox is up to date`);
-    return;
-  }
-  const len = Math.min(threads.length, amount);
-  for (let i = 0; i < len; i++) {
-    if (i % 5 == 0 && i > 0) new Notice(`${((i / len) * 100).toFixed(0)}% fetched`);
-    const id = threads[i].id || '';
-    console.log(`Fetching mail with id: ${id}`);
-    await saveAttachments(settings, id);
-  }
-  new Notice(`${len} mails fetched.`);
+  let totalLen = 0;
+  importConfigs.forEach(async (config) => {
+    const threads = (await fetchMailList(account, gmail, config.partialSubjects)) || [];
+    if (threads.length == 0) {
+      new Notice(`No mails found for: ${config.label}`);
+      return;
+    }
+    const len = Math.min(threads.length, amount);
+    totalLen += len;
+    for (let i = 0; i < len; i++) {
+      if (i % 5 == 0 && i > 0) new Notice(`${((i / len) * 100).toFixed(0)}% fetched`);
+      const id = threads[i].id || '';
+      console.log(`Fetching mail with id: ${id}`);
+      // TODO: Handle configs
+      await importEmailData(settings, id, config);
+    }
+  });
+  new Notice(`${totalLen} mails fetched.`);
 }

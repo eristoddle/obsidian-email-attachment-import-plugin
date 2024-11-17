@@ -11,6 +11,18 @@ interface GoogleService {
   login: boolean;
 }
 
+export interface ImportConfig {
+  label: string;
+  format: 'html' | 'text';
+  partialSubjects: string[];
+  location: 'attachment' | 'body';
+  active?: boolean;
+  // TODO: Handle these
+  noteName?: string;
+  template?: string;
+  folder?: string;
+}
+
 export interface GmailSettings {
   gc: GoogleService;
   credentials: string;
@@ -23,6 +35,7 @@ export interface GmailSettings {
   fetch_interval: number;
   fetch_on_load: boolean;
   noteName: string;
+  import_configs: Array<ImportConfig>;
 }
 
 export const DEFAULT_SETTINGS: GmailSettings = {
@@ -43,6 +56,23 @@ export const DEFAULT_SETTINGS: GmailSettings = {
   fetch_amount: 25,
   fetch_interval: 0,
   fetch_on_load: false,
+  // TODO: Handle hardcoded import configs. Will also need to handle html cleanup and title and author extraction.
+  import_configs: [
+    {
+      label: 'Kindle Highlights',
+      format: 'html',
+      partialSubjects: ['iPad Notebook export'],
+      location: 'attachment',
+      active: true,
+    },
+    {
+      label: 'Books App Highlights',
+      format: 'html',
+      partialSubjects: ['Notes from "'],
+      location: 'body',
+      active: true,
+    },
+  ],
 };
 
 export class ExampleModal extends Modal {
