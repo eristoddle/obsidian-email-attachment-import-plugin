@@ -8,7 +8,7 @@ So I thought, let's make it more universal. Hence, it "downloads email attachmen
 
 So I'm working on doing those specific two things and I'm not sure where "what it does" will end. Maybe, it will "import specific email content from attachment or body" or maybe I will continue in the "get all my notes and citations from everywhere that emails them" direction.
 
-Either way, the original name of the repo is completely wrong now and the description of what it does is up in the air. I knew this would happen when I thought, I'll just whip this thing out in a week.
+Either way, the original name of the repo is completely wrong now and the description of what it does is up in the air. I knew this would happen when I thought, I'll just whip this thing out in a weekend.
 
 ## MVP
 

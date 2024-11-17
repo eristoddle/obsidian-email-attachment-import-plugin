@@ -20,7 +20,7 @@ const SCOPES = [
 ];
 export async function loadSavedCredentialsIfExist(settings: GmailSettings) {
   try {
-    const content = await this.app.vault.readConfigJson(settings.token_path);
+    const content = await this.app.vault.readConfigJson(settings.tokenPath);
     return auth.fromJSON(content);
   } catch (err) {
     return null;
@@ -107,7 +107,7 @@ export async function authorize(setting: GmailSettings) {
   }
   if (client.credentials) {
     // TODO: Here is where it saves the token
-    await saveCredentials(client, setting.credentials, setting.token_path);
+    await saveCredentials(client, setting.credentials, setting.tokenPath);
     setting.gc.authClient = client;
     setting.gc.gmail = createGmailConnect(client);
     setting.gc.login = true;
@@ -121,7 +121,7 @@ export async function setupGserviceConnection(settings: GmailSettings) {
   await authorize(settings);
   if (settings.gc.login) {
     assertPresent(gc.gmail, 'Gmail is not setup properly');
-    settings.mail_account = await getMailAccount(gc.gmail);
+    settings.gmailAccount = await getMailAccount(gc.gmail);
     return true;
   } else return false;
 }

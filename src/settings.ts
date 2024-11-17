@@ -28,11 +28,11 @@ export interface GmailSettings {
   credentials: string;
   defaultNoteFolder: string;
   defaultTemplate: string;
-  token_path: string;
-  mail_account: string;
-  fetch_amount: number;
-  fetch_interval: number;
-  fetch_on_load: boolean;
+  tokenPath: string;
+  gmailAccount: string;
+  fetchAmount: number;
+  fetchInterval: number;
+  fetchOnLoad: boolean;
   defaultNoteName: string;
   importConfigs: Array<ImportConfig>;
 }
@@ -48,12 +48,12 @@ export const DEFAULT_SETTINGS: GmailSettings = {
   defaultTemplate: '',
   defaultNoteFolder: 'gmailNotes',
   defaultNoteName: '${Subject}',
-  token_path: 'plugins/obsidian-google-mail/.token',
+  tokenPath: 'plugins/obsidian-google-mail/.token',
 
-  mail_account: '',
-  fetch_amount: 25,
-  fetch_interval: 0,
-  fetch_on_load: false,
+  gmailAccount: '',
+  fetchAmount: 25,
+  fetchInterval: 0,
+  fetchOnLoad: false,
   // TODO: Add this to settings UI. Will also need to handle html cleanup and title and author extraction.
   importConfigs: [
     {
@@ -124,8 +124,8 @@ export class ExampleModal extends Modal {
 }
 
 async function logout(settings: GmailSettings, Tab: GmailAttachmentSettingsTab) {
-  removeToken(settings.token_path).then(() => {
-    settings.mail_account = '';
+  removeToken(settings.tokenPath).then(() => {
+    settings.gmailAccount = '';
     settings.gc.gmail = null;
     settings.gc.login = false;
     settings.gc.authClient = null;
@@ -140,10 +140,10 @@ export async function draw_settingtab(settingTab: GmailAttachmentSettingsTab) {
   const settings = plugin.settings;
   containerEl.empty();
   containerEl.createEl('h2', { text: 'Setup Google OAuth' });
-  const profile_section = new Setting(containerEl)
+  const profileSection = new Setting(containerEl)
     .setName('GAP Client JSON')
     .setDesc('The web OAuth client json downloaded from Google Auth Platform.');
-  profile_section.addButton((cb) => {
+  profileSection.addButton((cb) => {
     cb.setButtonText('Setup')
       .setCta()
       .onClick(() => {
@@ -152,7 +152,7 @@ export async function draw_settingtab(settingTab: GmailAttachmentSettingsTab) {
   });
   // TODO: This is not happening. Also need to auth every time I do something. Maybe because dev env?
   // if (await checkToken(settings.token_path)) {
-    profile_section.addButton((cb) => {
+    profileSection.addButton((cb) => {
       cb.setButtonText('logout')
         .setCta()
         .onClick(async () => {
@@ -163,7 +163,7 @@ export async function draw_settingtab(settingTab: GmailAttachmentSettingsTab) {
     containerEl.createEl('h2', { text: 'Gmail Import Settings' });
     new Setting(containerEl)
       .setName('Email Account')
-      .addText((text) => text.setValue(settings.mail_account).setDisabled(true));
+      .addText((text) => text.setValue(settings.gmailAccount).setDisabled(true));
     new Setting(containerEl)
       .setName('Mail Folder')
       .setDesc('Default folder to save email exports')
@@ -206,9 +206,9 @@ export async function draw_settingtab(settingTab: GmailAttachmentSettingsTab) {
       .addText((text) =>
         text
           .setPlaceholder('default is 25')
-          .setValue(String(settings.fetch_amount))
+          .setValue(String(settings.fetchAmount))
           .onChange(async (value) => {
-            settings.fetch_amount = parseInt(value);
+            settings.fetchAmount = parseInt(value);
             await plugin.saveSettings();
           }),
       );
@@ -218,11 +218,11 @@ export async function draw_settingtab(settingTab: GmailAttachmentSettingsTab) {
       .addText((text) =>
         text
           .setPlaceholder('default is 0 disabled')
-          .setValue(String(settings.fetch_interval))
+          .setValue(String(settings.fetchInterval))
           .onChange(async (value) => {
             const parsed = parseInt(value);
             if (isNaN(parsed)) return;
-            settings.fetch_interval = parsed > 0 ? parsed : 0;
+            settings.fetchInterval = parsed > 0 ? parsed : 0;
             await plugin.saveSettings();
             await plugin.setTimer();
           }),
@@ -231,9 +231,9 @@ export async function draw_settingtab(settingTab: GmailAttachmentSettingsTab) {
       .setName('Fetch on load')
       .setDesc('Whether to run fetch when Obsidian starts')
       .addToggle((cb) => {
-        cb.setValue(settings.fetch_on_load);
+        cb.setValue(settings.fetchOnLoad);
         cb.onChange(async (value) => {
-          settings.fetch_on_load = value;
+          settings.fetchOnLoad = value;
           await plugin.saveSettings();
         });
       });

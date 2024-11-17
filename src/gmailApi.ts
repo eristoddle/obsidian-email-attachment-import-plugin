@@ -14,12 +14,12 @@ export function createGmailConnect(client: any): GMail {
   });
 }
 
-const label_options = new Map([
+const labelOptions = new Map([
   ['tag', '#{}'],
   ['link', '[[{}]]'],
 ]);
 
-const body_options = new Map([
+const bodyOptions = new Map([
   ['htmlmd', 'htmlmd'],
   ['text', 'text'],
   ['raw', 'raw'],
@@ -39,8 +39,7 @@ export async function getMailAccount(gmail: gmail_v1.Gmail) {
   const res = await gmail.users.getProfile({
     userId: 'me',
   });
-  const mail_address = res.data.emailAddress;
-  return mail_address || '';
+  return res.data.emailAddress || '';
 }
 
 function renderTemplate(template: string, mail: Map<string, string>) {
@@ -67,21 +66,21 @@ function formatDate(iso_date: string) {
   return d.toISOString().split('T')[0];
 }
 
-async function getTemplate(template_path: string) {
+async function getTemplate(templatePath: string) {
   let template = '${Body}';
-  if (template_path) {
-    template = await this.app.vault.readRaw(template_path);
+  if (templatePath) {
+    template = await this.app.vault.readRaw(templatePath);
   }
-  const label_match = template.match(/\$\{Labels\|*(.*)\}/) || [];
-  const label_format = label_options.get(label_match[1]) || '#{}';
+  const labelMatch = template.match(/\$\{Labels\|*(.*)\}/) || [];
+  const labelFormat = labelOptions.get(labelMatch[1]) || '#{}';
   template = template.replace(/\$\{Labels.*\}/, '${Labels}');
-  const body_match = template.match(/\$\{Body\|*(.*)\}/) || [];
-  const body_format = body_options.get(body_match[1]) || 'htmlmd';
+  const bodyMatch = template.match(/\$\{Body\|*(.*)\}/) || [];
+  const bodyFormat = bodyOptions.get(bodyMatch[1]) || 'htmlmd';
   template = template.replace(/\$\{Body.*\}/, '${Body}');
   return {
     template: template,
-    label_format: label_format,
-    body_format: body_format,
+    label_format: labelFormat,
+    body_format: bodyFormat,
   };
 }
 
@@ -187,7 +186,7 @@ async function importEmailData(settings: GmailSettings, id: string, config: Impo
   const noteName_template = settings.defaultNoteName;
   const gmail = settings.gc.gmail;
   assertPresent(gmail, 'Gmail is not setup properly');
-  const account = settings.mail_account;
+  const account = settings.gmailAccount;
   const folder = settings.defaultNoteFolder;
   const res = await gmail.users.threads.get({
     userId: account,
@@ -225,7 +224,7 @@ async function importEmailData(settings: GmailSettings, id: string, config: Impo
   // console.log('mailboxObject:');
   // console.log(payload);
   // console.log(mailboxObject);
-  console.log('fields:', fields);
+  // console.log('fields:', fields);
   console.log('subject:', fields.get('${Subject}'));
 
   assertPresent(payload.headers, 'No headers in payload');
@@ -268,9 +267,9 @@ async function makeDirectoryIfAbsent(path: string) {
 }
 
 async function fetchMails(settings: GmailSettings) {
-  const account = settings.mail_account;
+  const account = settings.gmailAccount;
   const base_folder = settings.defaultNoteFolder;
-  const amount = settings.fetch_amount;
+  const amount = settings.fetchAmount;
   const gmail = settings.gc.gmail;
   assertPresent(gmail, 'Gmail setup is not correct');
   const importConfigs = settings.importConfigs;

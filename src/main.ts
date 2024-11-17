@@ -10,7 +10,7 @@ export default class GmailAttachmentImporter extends Plugin {
   async onload() {
     await this.loadSettings();
 
-    if (this.settings.fetch_on_load) fetchMailAction(this.settings);
+    if (this.settings.fetchOnLoad) fetchMailAction(this.settings);
 
     this.setTimer();
 
@@ -43,12 +43,12 @@ export default class GmailAttachmentImporter extends Plugin {
   }
 
   async setTimer() {
-    if (isNaN(this.settings.fetch_interval) || this.settings.fetch_interval < 0) {
+    if (isNaN(this.settings.fetchInterval) || this.settings.fetchInterval < 0) {
       return;
     }
 
     await this.cancelTimer();
-    const msInterval = this.settings.fetch_interval * 60000;
+    const msInterval = this.settings.fetchInterval * 60000;
     if (msInterval > 0) {
       this.timerID = setInterval(() => {
         fetchMailAction(this.settings);
