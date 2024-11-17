@@ -248,9 +248,14 @@ async function importEmailData(settings: GmailSettings, id: string, config: Impo
   }
 }
 
-// TODO: This is where the filtering can happen
-async function fetchMailList(account: string, gmail: gmail_v1.Gmail, partialSubjects: string[]) {
-  const query = partialSubjects.map((subject) => `subject:"${subject}"`).join(' OR ');
+async function fetchMailList(account: string, gmail: gmail_v1.Gmail, partialSubjects: string[], allowedSenders?: string[]) {
+  // TODO: Make query more specific to get exact mail. Currently whitelisting by sender as a bandaid to unexpected imports.
+  const subjectQuery = partialSubjects.map((subject) => `subject:"${subject}"`).join(' OR ');
+  let query = subjectQuery;
+  if (allowedSenders) {
+    const senderQuery = allowedSenders.map((sender) => `from:${sender}`).join(' OR ');
+    query = `(${subjectQuery}) AND (${senderQuery})`;
+  }
   const res = await gmail.users.threads.list({
     userId: account,
     maxResults: 100,
@@ -278,7 +283,7 @@ async function fetchMails(settings: GmailSettings) {
   await makeDirectoryIfAbsent(base_folder);
   let totalLen = 0;
   importConfigs.forEach(async (config) => {
-    const threads = (await fetchMailList(account, gmail, config.partialSubjects)) || [];
+    const threads = (await fetchMailList(account, gmail, config.partialSubjects, config.filterBySenders)) || [];
     if (threads.length == 0) {
       new Notice(`No mails found for: ${config.label}`);
       return;

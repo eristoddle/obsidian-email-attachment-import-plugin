@@ -16,11 +16,13 @@ export interface ImportConfig {
   format: 'html' | 'text';
   partialSubjects: string[];
   location: 'attachment' | 'body';
-  active?: boolean;
+  active: boolean;
+  filterBySenders?: string[];
   // TODO: Handle these
   noteName?: string;
   template?: string;
   folder?: string;
+  archive?: boolean;
 }
 
 export interface GmailSettings {
@@ -60,13 +62,15 @@ export const DEFAULT_SETTINGS: GmailSettings = {
       label: 'Kindle Highlights',
       format: 'html',
       partialSubjects: ['iPad Notebook export'],
+      filterBySenders: ['stephanmil@gmail.com'],
       location: 'attachment',
       active: true,
     },
     {
       label: 'Books App Highlights',
       format: 'html',
-      partialSubjects: ['Notes from "'],
+      partialSubjects: ['Notes from'],
+      filterBySenders: ['stephanmil@gmail.com'],
       location: 'body',
       active: true,
     },

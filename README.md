@@ -2,11 +2,11 @@
 
 Downloads email attachments from Gmail based on partial subject matches.
 
-It started as that. Actually it started as a way to get all my ebook highlights and notes into Obisidian where I could use them without going through Readwise. I have a lot of loose ones that I didn't buy through Amazon and only those seem to work with the Readwise's automatic import from Kindle. Most of my highlights I'd have to email to their email address and then I can pick them up through the Obisidian Readwise extension.
+It started as that. Actually it started as a way to get all my ebook highlights and notes into Obisidian where I could use them without going through Readwise. I have a lot of loose ones that I didn't buy through Amazon and those don't seem to work with the Readwise's automatic import from Kindle. Most of my highlights I'd have to email to their email address and then I can pick them up through the Obisidian Readwise extension. So I thought, well I can do that from my own email account.
 
 So I thought, let's make it more universal. Hence, it "downloads email attachments from Gmail based on partial subject matches." I mainly use my iPad's Book App and Kindle App. Well, it turns out the Kindle app does send highlights as attachments but the Book app sends them in the body of the email, so it got more complicated.
 
-So I'm working on doing those specific two things and I'm not sure where "what it does" will end. Maybe, it will "import specific email content from attachment or body" or maybe I will continue in the "get all my notes and citations from everywhere that emails them" direction.
+So I'm working on doing those specific two things and I'm not sure where "what it does" will end. Maybe, it will "import specific email content from attachment or body" or maybe I will continue in the "get all my notes and citations from everywhere that emails them" direction or if I just bail on messing with regex or anything like that, I just make it an "gmail yourself an Obsidian note plugin". Actually, that last one is looking pretty tempting.
 
 Either way, the original name of the repo is completely wrong now and the description of what it does is up in the air. I knew this would happen when I thought, I'll just whip this thing out in a weekend.
 
@@ -21,11 +21,16 @@ Find emails by partial subject and download the attachments to specific folder.
 ## TODO
 
 - [x] Convert attachments to markdown
-- [ ] Clean up HTML before convert
+- [x] Make settings value an array of object with a folder and an array of partial subject matches and handle attachment vs body.
+- [x] Handle attachment vs body
+- [ ] Import configs will have to be more complex
+  - [ ] Parsing title, author, and other meta for each
+  - [ ] Handle body or attachment HTML cleanup
 - [ ] Use custom template to create note
-- [ ] Prevent duplicates
-- [ ] Make settings value an array of object with a folder and an array of partial subject matches. Will have to be more complex with attachment vs body and parsing title and author from both formats and others to come.
-- [ ] Do something with the original gmails, like archive
+- [ ] Prevent duplicates (possibly storing id in frontmatter and then filter out in search)
+- [ ] More metadata to store in frontmatter?
+- [ ] Handle archive boolean
+- [ ] Improve subject filter method to prevent unexpected imports
 - [ ] Clean up project: Put types in folder, consistent name case, refactor, remove dead code, etc.
 - [ ] Generate code documentation (Codium?)
 - [ ] Create unit tests
