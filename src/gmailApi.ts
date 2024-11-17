@@ -183,12 +183,12 @@ export type MessagePart = gmail_v1.Schema$MessagePart;
 export type MessagePartBody = gmail_v1.Schema$MessagePartBody;
 
 async function importEmailData(settings: GmailSettings, id: string, config: ImportConfig) {
-  const note = await getTemplate(settings.template);
-  const noteName_template = settings.noteName;
+  const note = await getTemplate(settings.defaultTemplate);
+  const noteName_template = settings.defaultNoteName;
   const gmail = settings.gc.gmail;
   assertPresent(gmail, 'Gmail is not setup properly');
   const account = settings.mail_account;
-  const folder = settings.mail_folder;
+  const folder = settings.defaultNoteFolder;
   const res = await gmail.users.threads.get({
     userId: account,
     id: id,
@@ -251,7 +251,7 @@ async function importEmailData(settings: GmailSettings, id: string, config: Impo
 
 // TODO: This is where the filtering can happen
 async function fetchMailList(account: string, gmail: gmail_v1.Gmail, partialSubjects: string[]) {
-  const query = partialSubjects.map((subject) => `subject:${subject}`).join(' OR ');
+  const query = partialSubjects.map((subject) => `subject:"${subject}"`).join(' OR ');
   const res = await gmail.users.threads.list({
     userId: account,
     maxResults: 100,
@@ -269,11 +269,11 @@ async function makeDirectoryIfAbsent(path: string) {
 
 async function fetchMails(settings: GmailSettings) {
   const account = settings.mail_account;
-  const base_folder = settings.mail_folder;
+  const base_folder = settings.defaultNoteFolder;
   const amount = settings.fetch_amount;
   const gmail = settings.gc.gmail;
   assertPresent(gmail, 'Gmail setup is not correct');
-  const importConfigs = settings.import_configs;
+  const importConfigs = settings.importConfigs;
 
   new Notice('Fetch starting');
   await makeDirectoryIfAbsent(base_folder);

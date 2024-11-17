@@ -26,16 +26,16 @@ export interface ImportConfig {
 export interface GmailSettings {
   gc: GoogleService;
   credentials: string;
-  mail_folder: string;
+  defaultNoteFolder: string;
   attachment_folder: string;
-  template: string;
+  defaultTemplate: string;
   token_path: string;
   mail_account: string;
   fetch_amount: number;
   fetch_interval: number;
   fetch_on_load: boolean;
-  noteName: string;
-  import_configs: Array<ImportConfig>;
+  defaultNoteName: string;
+  importConfigs: Array<ImportConfig>;
 }
 
 export const DEFAULT_SETTINGS: GmailSettings = {
@@ -46,18 +46,18 @@ export const DEFAULT_SETTINGS: GmailSettings = {
     login: false,
   },
   credentials: '',
-  template: '',
-  mail_folder: 'fetchedMail',
+  defaultTemplate: '',
+  defaultNoteFolder: 'gmailNotes',
   attachment_folder: 'fetchedMail/attachments',
-  noteName: '${Subject}',
+  defaultNoteName: '${Subject}',
   token_path: 'plugins/obsidian-google-mail/.token',
 
   mail_account: '',
   fetch_amount: 25,
   fetch_interval: 0,
   fetch_on_load: false,
-  // TODO: Handle hardcoded import configs. Will also need to handle html cleanup and title and author extraction.
-  import_configs: [
+  // TODO: Add this to settings UI. Will also need to handle html cleanup and title and author extraction.
+  importConfigs: [
     {
       label: 'Kindle Highlights',
       format: 'html',
@@ -162,49 +162,49 @@ export async function draw_settingtab(settingTab: GmailAttachmentSettingsTab) {
         });
     });
 
-    containerEl.createEl('h2', { text: 'Gmail Attachment Import Settings' });
+    containerEl.createEl('h2', { text: 'Gmail Import Settings' });
     new Setting(containerEl)
       .setName('Email Account')
       .addText((text) => text.setValue(settings.mail_account).setDisabled(true));
     new Setting(containerEl)
       .setName('Mail Folder')
-      .setDesc('Folder to save email attachments')
+      .setDesc('Default folder to save email exports')
       .addText((text) =>
         text
           .setPlaceholder('/Folder/')
-          .setValue(settings.mail_folder)
+          .setValue(settings.defaultNoteFolder)
           .onChange(async (value) => {
-            settings.mail_folder = value;
+            settings.defaultNoteFolder = value;
             await plugin.saveSettings();
           }),
       );
     new Setting(containerEl)
       .setName('File Name')
-      .setDesc('File name to use for email attachment notes')
+      .setDesc('Default file name to use for notes')
       .addText((text) =>
         text
           .setPlaceholder('${Subject}-${Date}')
-          .setValue(settings.noteName || '')
+          .setValue(settings.defaultNoteName || '')
           .onChange(async (value) => {
-            settings.noteName = value;
+            settings.defaultNoteName = value;
             await plugin.saveSettings();
           }),
       );
     new Setting(containerEl)
-      .setName('Attachement Note Template')
-      .setDesc('Template used to render email attachment notes.')
+      .setName('Attachment Template')
+      .setDesc('Default template used to render notes.')
       .addText((text) =>
         text
           .setPlaceholder('/Folder/template.md')
-          .setValue(settings.template)
+          .setValue(settings.defaultTemplate)
           .onChange(async (value) => {
-            settings.template = value;
+            settings.defaultTemplate = value;
             await plugin.saveSettings();
           }),
       );
     new Setting(containerEl)
       .setName('Fetch Count')
-      .setDesc('How many attachments to fetch per action')
+      .setDesc('How many emails to fetch per action')
       .addText((text) =>
         text
           .setPlaceholder('default is 25')
@@ -247,9 +247,9 @@ export async function draw_settingtab(settingTab: GmailAttachmentSettingsTab) {
         cb.setIcon('checkmark');
         cb.onClick(async (cb) => {
           let checked = true;
-          if (!(await this.app.vault.exists(settings.template))) {
+          if (!(await this.app.vault.exists(settings.defaultTemplate))) {
             new Notice('Template file doesn\'t exist.');
-            settings.template = '';
+            settings.defaultTemplate = '';
             checked = false;
           }
           if (checked) {
