@@ -146,11 +146,15 @@ function convertAttachmentToMarkdown(base64Data: string, config: ImportConfig) {
 
   if (config.removeFromHtml) {
     config.removeFromHtml.forEach((removal) => {
-      // TODO: Add raw removal
       if (removal.type === 'selector') {
         const elementsToRemove = doc.querySelectorAll(removal.value);
         elementsToRemove.forEach(element => element.remove());
       }
+      // TODO: Add raw removal
+      // if (removal.type === 'raw') {
+      //   const regex = new RegExp(removal.value, 'g');
+      //   decodedHtml = decodedHtml.replace(regex, '');
+      // }
     });
   }
 

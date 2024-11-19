@@ -12,7 +12,9 @@ Either way, the original name of the repo is completely wrong now and the descri
 
 ## MVP
 
-Find emails by partial subject and download the attachments to specific folder.
+This is a work in progress.
+
+It currently finds emails by partial subject and download the attachments or body to a specific folder.
 
 ## Some issues with complete Readwise replacement.
 
@@ -46,7 +48,3 @@ Find emails by partial subject and download the attachments to specific folder.
 ## Thanks To
 
 [anicholson](https://github.com/anicholson) and the [Obsidian Google Mail](https://github.com/anicholson/obsidian-google-mail) plugin for showing me a way this would work.
-
-## Support Plugin Development
-
-<a href="https://www.buymeacoffee.com/eristoddle" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
