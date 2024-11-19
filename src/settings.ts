@@ -11,6 +11,16 @@ interface GoogleService {
   login: boolean;
 }
 
+interface HtmlRemoval {
+  type: 'raw' | 'selector';
+  value: string;
+}
+
+interface YamlAddition {
+  key: string;
+  selector: string;
+}
+
 export interface ImportConfig {
   label: string;
   format: 'html' | 'text';
@@ -18,6 +28,8 @@ export interface ImportConfig {
   location: 'attachment' | 'body';
   active: boolean;
   filterBySenders?: string[];
+  removeFromHtml?: HtmlRemoval[];
+  addToYaml?: YamlAddition[];
   // TODO: Handle these
   noteName?: string;
   template?: string;
@@ -65,6 +77,22 @@ export const DEFAULT_SETTINGS: GmailSettings = {
       filterBySenders: ['stephanmil@gmail.com'],
       location: 'attachment',
       active: true,
+      removeFromHtml: [
+        {
+          type: 'selector',
+          value: 'style',
+        },
+      ],
+      addToYaml: [
+        {
+          key: 'authors',
+          selector: '.authors',
+        },
+        {
+          key: 'title',
+          selector: '.bookTitle',
+        },
+      ],
     },
     {
       label: 'Books App Highlights',

@@ -103,6 +103,7 @@ async function getAttachments(
   msgId: string,
   parts: MessagePart[],
   folder: string,
+  config: ImportConfig
 ) {
   const files = Array<string>();
   for (let i = 0; i < parts.length; i++) {
@@ -116,19 +117,19 @@ async function getAttachments(
     }
 
     const attachmentResponse = await getAttachment(gmail, account, msgId, attach_id);
-    const final_name = await processAttachment(part, folder, attachmentResponse);
+    const final_name = await processAttachment(part, folder, attachmentResponse, config);
     files.push(final_name);
   }
   return files;
 }
 
-async function processAttachment(part: MessagePart, folder: string, attachmentResponse: any) {
+async function processAttachment(part: MessagePart, folder: string, attachmentResponse: any, config: ImportConfig) {
   const base64Data = attachmentResponse.data?.data?.replace(/-/g, '+').replace(/_/g, '/') || '';
   // TODO: This needs to be the book title
   const init_name = part.filename || '';
   const final_name = await incrementFilename(init_name, folder);
   if (part.mimeType === 'text/html') {
-    const markdownContent = convertAttachmentToMarkdown(base64Data);
+    const markdownContent = convertAttachmentToMarkdown(base64Data, config);
     await this.app.vault.create(final_name + '.md', markdownContent);
   } else {
     await this.app.vault.createBinary(final_name, base64ToArrayBuffer(base64Data));
@@ -136,11 +137,39 @@ async function processAttachment(part: MessagePart, folder: string, attachmentRe
   return final_name;
 }
 
-// TODO: 1. Clean up the HTML before converting to markdown (see handleMail.ts) 2. Use template
-function convertAttachmentToMarkdown(base64Data: string) {
-  const turndownService = new TurndownService();
+// TODO: 1. Clean up the HTML before converting to markdown (see handleMail.ts) 2. Use template 3. Use one function for both body and attachment
+function convertAttachmentToMarkdown(base64Data: string, config: ImportConfig) {
   const decodedHtml = Buffer.from(base64Data, 'base64').toString('utf-8');
-  const markdownContent = turndownService.turndown(decodedHtml);
+  const turndownService = new TurndownService();
+  const domParser = new DOMParser();
+  const doc = domParser.parseFromString(decodedHtml, 'text/html');
+
+  if (config.removeFromHtml) {
+    config.removeFromHtml.forEach((removal) => {
+      // TODO: Add raw removal
+      if (removal.type === 'selector') {
+        const elementsToRemove = doc.querySelectorAll(removal.value);
+        elementsToRemove.forEach(element => element.remove());
+      }
+    });
+  }
+
+  const processedHtml = doc.documentElement.outerHTML;
+  let markdownContent = turndownService.turndown(processedHtml);
+
+  if (config.addToYaml) {
+    let yaml = '---\n';
+    config.addToYaml.forEach((addition) => {
+      const selector = doc.querySelector(addition.selector);
+      if (selector) {
+        const value = selector.textContent;
+        yaml += `${addition.key}: ${value}\n`;
+      }
+    });
+    yaml += '---\n\n';
+    markdownContent = yaml + markdownContent;
+  }
+
   return markdownContent;
 }
 
@@ -246,7 +275,7 @@ async function importEmailData(settings: GmailSettings, id: string, config: Impo
   // TODO: Use template with attachments
   if (config.location == 'attachment') {
     await makeDirectoryIfAbsent(settings.defaultNoteFolder);
-    const files = await getAttachments(gmail, account, msgID, mailboxObject.assets, settings.defaultNoteFolder);
+    const files = await getAttachments(gmail, account, msgID, mailboxObject.assets, settings.defaultNoteFolder, config);
     fields.set('${Attachment}', files.map((f) => `![[${f}]]`).join('\n'));
   }
 }
